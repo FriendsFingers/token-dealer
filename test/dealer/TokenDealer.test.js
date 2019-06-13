@@ -4,10 +4,10 @@ const { ZERO_ADDRESS } = constants;
 const { shouldBehaveLikeTokenDealer } = require('./behaviours/TokenDealer.behaviour');
 
 const TokenDealer = artifacts.require('TokenDealer');
-const ERC20Mock = artifacts.require('ERC20Mock');
+const ERC1363Mock = artifacts.require('ERC1363Mock');
 const Contributions = artifacts.require('Contributions');
 
-contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdParty]) {
+contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdParty, dao]) {
   const tokenSupply = new BN(1000000000);
 
   const initialRate = new BN(1000);
@@ -18,8 +18,13 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
   });
 
   beforeEach(async function () {
-    this.token = await ERC20Mock.new(owner, tokenSupply);
+    this.token = await ERC1363Mock.new(owner, tokenSupply);
     this.contributions = await Contributions.new();
+
+    // TODO create the dao
+    this.dao = {
+      address: dao,
+    };
   });
 
   context('like a TokenDealer', function () {
@@ -29,7 +34,8 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           0,
           wallet,
           this.token.address,
-          this.contributions.address
+          this.contributions.address,
+          this.dao.address
         ),
         'Crowdsale: rate is 0'
       );
@@ -41,7 +47,8 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           initialRate,
           ZERO_ADDRESS,
           this.token.address,
-          this.contributions.address
+          this.contributions.address,
+          this.dao.address
         ),
         'Crowdsale: wallet is the zero address'
       );
@@ -53,7 +60,8 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           initialRate,
           wallet,
           ZERO_ADDRESS,
-          this.contributions.address
+          this.contributions.address,
+          this.dao.address
         ),
         'Crowdsale: token is the zero address'
       );
@@ -65,6 +73,19 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           initialRate,
           wallet,
           this.token.address,
+          ZERO_ADDRESS,
+          this.dao.address
+        )
+      );
+    });
+
+    it('requires a non-null dao', async function () {
+      await expectRevert.unspecified(
+        TokenDealer.new(
+          initialRate,
+          wallet,
+          this.token.address,
+          this.contributions.address,
           ZERO_ADDRESS
         )
       );
@@ -76,7 +97,8 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           initialRate,
           wallet,
           this.token.address,
-          this.contributions.address
+          this.contributions.address,
+          this.dao.address
         );
 
         await this.token.transfer(this.crowdsale.address, tokenSupply);
@@ -97,6 +119,10 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
 
       it('contributions should be right set', async function () {
         (await this.crowdsale.contributions()).should.be.equal(this.contributions.address);
+      });
+
+      it('dao should be right set', async function () {
+        (await this.crowdsale.dao()).should.be.equal(this.dao.address);
       });
 
       describe('set new rate', function () {

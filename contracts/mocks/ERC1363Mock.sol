@@ -1,9 +1,9 @@
 pragma solidity ^0.5.9;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "erc-payable-token/contracts/token/ERC1363/ERC1363.sol";
 
-// mock class using ERC20
-contract ERC20Mock is ERC20 {
+// mock class using ERC1363
+contract ERC1363Mock is ERC1363 {
     constructor(address initialAccount, uint256 initialBalance) public {
         _mint(initialAccount, initialBalance);
     }

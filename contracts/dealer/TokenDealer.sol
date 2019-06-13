@@ -1,6 +1,6 @@
 pragma solidity ^0.5.9;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "dao-smartcontracts/contracts/dapp/DAPP.sol";
 import "openzeppelin-solidity/contracts/crowdsale/Crowdsale.sol";
 import "../utils/Contributions.sol";
 
@@ -9,7 +9,7 @@ import "../utils/Contributions.sol";
  * @author Vittorio Minacori (https://github.com/vittominacori)
  * @dev Extends from Crowdsale with more stuff
  */
-contract TokenDealer is Crowdsale, TokenRecover {
+contract TokenDealer is DAPP, Crowdsale, TokenRecover {
 
     // reference to Contributions contract
     Contributions private _contributions;
@@ -22,15 +22,18 @@ contract TokenDealer is Crowdsale, TokenRecover {
      * @param wallet Address where collected funds will be forwarded to
      * @param token Address of the token being sold
      * @param contributions Address of the contributions contract
+     * @param dao DAO the decentralized organization address
      */
     constructor(
         uint256 rate,
         address payable wallet,
         address token,
-        address contributions
+        address contributions,
+        DAO dao
     )
         public
-        Crowdsale(rate, wallet, ERC20(token))
+        DAPP(dao, 0)
+        Crowdsale(rate, wallet, IERC20(token))
     {
         require(contributions != address(0));
 
