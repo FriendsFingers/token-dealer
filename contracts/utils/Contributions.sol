@@ -10,7 +10,6 @@ import "../access/roles/OperatorRole.sol";
  * @dev Utility contract where to save any information about Crowdsale contributions
  */
 contract Contributions is OperatorRole, TokenRecover {
-
     using SafeMath for uint256;
 
     struct Contributor {

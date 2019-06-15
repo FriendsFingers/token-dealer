@@ -6,9 +6,10 @@ const { shouldBehaveLikeTokenDealer } = require('./behaviours/TokenDealer.behavi
 const TokenDealer = artifacts.require('TokenDealer');
 const ERC1363Mock = artifacts.require('ERC1363Mock');
 const Contributions = artifacts.require('Contributions');
+const DAO = artifacts.require('DAO');
 
-contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdParty, dao]) {
-  const tokenSupply = new BN(1000000000);
+contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
+  const initialTokenSupply = new BN(1000000000);
 
   const initialRate = new BN(1000);
 
@@ -18,13 +19,9 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
   });
 
   beforeEach(async function () {
-    this.token = await ERC1363Mock.new(owner, tokenSupply);
-    this.contributions = await Contributions.new();
-
-    // TODO create the dao
-    this.dao = {
-      address: dao,
-    };
+    this.token = await ERC1363Mock.new(owner, initialTokenSupply, { from: owner });
+    this.contributions = await Contributions.new({ from: owner });
+    this.dao = await DAO.new(this.token.address, { from: owner });
   });
 
   context('like a TokenDealer', function () {
@@ -37,7 +34,7 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           this.contributions.address,
           this.dao.address
         ),
-        'Crowdsale: rate is 0'
+        'TokenDealer: rate is 0'
       );
     });
 
@@ -50,7 +47,7 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           this.contributions.address,
           this.dao.address
         ),
-        'Crowdsale: wallet is the zero address'
+        'TokenDealer: wallet is the zero address'
       );
     });
 
@@ -63,31 +60,33 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           this.contributions.address,
           this.dao.address
         ),
-        'Crowdsale: token is the zero address'
+        'TokenDealer: token is the zero address'
       );
     });
 
     it('requires a non-null contributions', async function () {
-      await expectRevert.unspecified(
+      await expectRevert(
         TokenDealer.new(
           initialRate,
           wallet,
           this.token.address,
           ZERO_ADDRESS,
           this.dao.address
-        )
+        ),
+        'TokenDealer: contributions is the zero address'
       );
     });
 
     it('requires a non-null dao', async function () {
-      await expectRevert.unspecified(
+      await expectRevert(
         TokenDealer.new(
           initialRate,
           wallet,
           this.token.address,
           this.contributions.address,
           ZERO_ADDRESS
-        )
+        ),
+        'TokenDealer: dao is the zero address'
       );
     });
 
@@ -98,11 +97,12 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
           wallet,
           this.token.address,
           this.contributions.address,
-          this.dao.address
+          this.dao.address,
+          { from: owner }
         );
 
-        await this.token.transfer(this.crowdsale.address, tokenSupply);
-        await this.contributions.addOperator(this.crowdsale.address);
+        await this.token.transfer(this.crowdsale.address, initialTokenSupply, { from: owner });
+        await this.contributions.addOperator(this.crowdsale.address, { from: owner });
       });
 
       it('rate should be right set', async function () {
@@ -138,8 +138,9 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
 
           describe('if set an invalid rate', function () {
             it('reverts', async function () {
-              await expectRevert.unspecified(
-                this.crowdsale.setRate(0, { from: owner })
+              await expectRevert(
+                this.crowdsale.setRate(0, { from: owner }),
+                'TokenDealer: rate is 0'
               );
             });
           });
@@ -147,14 +148,15 @@ contract('TokenDealer', function ([owner, wallet, investor, purchaser, thirdPart
 
         describe('if third party is calling', function () {
           it('reverts', async function () {
-            await expectRevert.unspecified(
-              this.crowdsale.setRate(newRate, { from: thirdParty })
+            await expectRevert(
+              this.crowdsale.setRate(newRate, { from: thirdParty }),
+              'Ownable: caller is not the owner'
             );
           });
         });
       });
 
-      shouldBehaveLikeTokenDealer([owner, wallet, investor, purchaser, thirdParty]);
+      shouldBehaveLikeTokenDealer([owner, wallet, member, thirdParty]);
     });
   });
 });

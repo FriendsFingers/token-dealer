@@ -7,4 +7,8 @@ contract ERC1363Mock is ERC1363 {
     constructor(address initialAccount, uint256 initialBalance) public {
         _mint(initialAccount, initialBalance);
     }
+
+    function mintMock(address account, uint256 amount) public {
+        _mint(account, amount);
+    }
 }
