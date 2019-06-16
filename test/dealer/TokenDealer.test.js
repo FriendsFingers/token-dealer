@@ -20,8 +20,8 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
 
   beforeEach(async function () {
     this.token = await ERC1363Mock.new(owner, initialTokenSupply, { from: owner });
-    this.contributions = await Contributions.new({ from: owner });
     this.dao = await DAO.new(this.token.address, { from: owner });
+    this.contributions = await Contributions.new({ from: owner });
   });
 
   context('like a TokenDealer', function () {
@@ -101,8 +101,9 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
           { from: owner }
         );
 
-        await this.token.transfer(this.crowdsale.address, initialTokenSupply, { from: owner });
         await this.contributions.addOperator(this.crowdsale.address, { from: owner });
+
+        await this.token.transfer(this.crowdsale.address, initialTokenSupply, { from: owner });
       });
 
       it('rate should be right set', async function () {

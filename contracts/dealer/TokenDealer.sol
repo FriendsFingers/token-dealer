@@ -80,6 +80,30 @@ contract TokenDealer is ReentrancyGuard, TokenRecover {
     }
 
     /**
+     * @dev low level token purchase
+     * This function has a non-reentrancy guard, so it shouldn't be called by
+     * another `nonReentrant` function.
+     */
+    function buyTokens() public nonReentrant payable {
+        address beneficiary = msg.sender;
+        uint256 weiAmount = msg.value;
+
+        require(_dao.isMember(beneficiary), "TokenDealer: beneficiary is not dao member");
+        require(weiAmount != 0, "TokenDealer: weiAmount is 0");
+
+        // calculate token amount to be sent
+        uint256 tokenAmount = _getTokenAmount(beneficiary, weiAmount);
+
+        _token.safeTransfer(beneficiary, tokenAmount);
+
+        emit TokensPurchased(beneficiary, weiAmount, tokenAmount);
+
+        _contributions.addBalance(beneficiary, weiAmount, tokenAmount);
+
+        _wallet.transfer(weiAmount);
+    }
+
+    /**
      * @dev Function to update rate
      * @param newRate The rate is the conversion between wei and the smallest and indivisible token unit
      */
@@ -124,71 +148,6 @@ contract TokenDealer is ReentrancyGuard, TokenRecover {
     }
 
     /**
-     * @dev low level token purchase
-     * This function has a non-reentrancy guard, so it shouldn't be called by
-     * another `nonReentrant` function.
-     */
-    function buyTokens() public nonReentrant payable {
-        address beneficiary = msg.sender;
-        uint256 weiAmount = msg.value;
-
-        _preValidatePurchase(beneficiary, weiAmount);
-
-        // calculate token amount to be sent
-        uint256 tokens = _getTokenAmount(beneficiary, weiAmount);
-
-        _deliverTokens(beneficiary, tokens);
-
-        emit TokensPurchased(beneficiary, weiAmount, tokens);
-
-        _updatePurchasingState(beneficiary, weiAmount, tokens);
-
-        _forwardFunds();
-
-        _postValidatePurchase(beneficiary, weiAmount, tokens);
-    }
-
-    /**
-     * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
-     * @param beneficiary Address performing the token purchase
-     * @param weiAmount Value in wei involved in the purchase
-     */
-    function _preValidatePurchase(address beneficiary, uint256 weiAmount) internal view {
-        require(_dao.isMember(beneficiary), "TokenDealer: beneficiary is not dao member");
-        require(weiAmount != 0, "TokenDealer: weiAmount is 0");
-    }
-
-    /**
-     * @dev Validation of an executed purchase. Observe state and use revert statements to undo rollback when valid
-     * conditions are not met.
-     * @param beneficiary Address performing the token purchase
-     * @param weiAmount Value in wei involved in the purchase
-     * @param tokenAmount Value in tokens involved in the purchase
-     */
-    function _postValidatePurchase(address beneficiary, uint256 weiAmount, uint256 tokenAmount) internal view {
-        // solhint-disable-previous-line no-empty-blocks
-    }
-
-    /**
-     * @dev This function delivers tokens to beneficiary
-     * @param beneficiary Address performing the token purchase
-     * @param tokenAmount Number of tokens to be emitted
-     */
-    function _deliverTokens(address beneficiary, uint256 tokenAmount) internal {
-        _token.safeTransfer(beneficiary, tokenAmount);
-    }
-
-    /**
-     * @dev Updates states
-     * @param beneficiary Address performing the token purchase
-     * @param weiAmount Value in wei involved in the purchase
-     * @param tokenAmount Value in tokens involved in the purchase
-     */
-    function _updatePurchasingState(address beneficiary, uint256 weiAmount, uint256 tokenAmount) internal {
-        _contributions.addBalance(beneficiary, weiAmount, tokenAmount);
-    }
-
-    /**
      * @dev The way in which ether is converted to tokens.
      * @param beneficiary Address receiving the tokens
      * @param weiAmount Value in wei to be converted into tokens
@@ -196,12 +155,5 @@ contract TokenDealer is ReentrancyGuard, TokenRecover {
      */
     function _getTokenAmount(address beneficiary, uint256 weiAmount) internal view returns (uint256) {
         return weiAmount.mul(_rate);
-    }
-
-    /**
-     * @dev Determines how ETH is stored/forwarded on purchases.
-     */
-    function _forwardFunds() internal {
-        _wallet.transfer(msg.value);
     }
 }
