@@ -1,6 +1,7 @@
 const { BN, constants, expectRevert, time } = require('openzeppelin-test-helpers');
 const { ZERO_ADDRESS } = constants;
 
+const { shouldBehaveLikeTokenRecover } = require('eth-token-recover/test/TokenRecover.behaviour');
 const { shouldBehaveLikeTokenDealer } = require('./behaviours/TokenDealer.behaviour');
 
 const TokenDealer = artifacts.require('TokenDealer');
@@ -11,7 +12,7 @@ const DAO = artifacts.require('DAO');
 contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
   const initialTokenSupply = new BN(1000000000);
 
-  const initialRate = new BN(1000);
+  const rate = new BN(1000);
 
   before(async function () {
     // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
@@ -41,7 +42,7 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
     it('requires a non-null wallet', async function () {
       await expectRevert(
         TokenDealer.new(
-          initialRate,
+          rate,
           ZERO_ADDRESS,
           this.token.address,
           this.contributions.address,
@@ -54,7 +55,7 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
     it('requires a non-null token', async function () {
       await expectRevert(
         TokenDealer.new(
-          initialRate,
+          rate,
           wallet,
           ZERO_ADDRESS,
           this.contributions.address,
@@ -67,7 +68,7 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
     it('requires a non-null contributions', async function () {
       await expectRevert(
         TokenDealer.new(
-          initialRate,
+          rate,
           wallet,
           this.token.address,
           ZERO_ADDRESS,
@@ -80,7 +81,7 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
     it('requires a non-null dao', async function () {
       await expectRevert(
         TokenDealer.new(
-          initialRate,
+          rate,
           wallet,
           this.token.address,
           this.contributions.address,
@@ -93,7 +94,7 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
     context('once deployed', function () {
       beforeEach(async function () {
         this.crowdsale = await TokenDealer.new(
-          initialRate,
+          rate,
           wallet,
           this.token.address,
           this.contributions.address,
@@ -107,7 +108,7 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
       });
 
       it('rate should be right set', async function () {
-        (await this.crowdsale.rate()).should.be.bignumber.equal(initialRate);
+        (await this.crowdsale.rate()).should.be.bignumber.equal(rate);
       });
 
       it('wallet should be right set', async function () {
@@ -157,7 +158,43 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
         });
       });
 
-      shouldBehaveLikeTokenDealer([owner, wallet, member, thirdParty]);
+      context('testing crowdsale behaviors', function () {
+        const tokenAmount = new BN(100);
+
+        context('if not a member wants to purchase', function () {
+          const bonus = new BN(1);
+          shouldBehaveLikeTokenDealer(thirdParty, wallet, rate, bonus);
+        });
+
+        context('if a member without staked tokens wants to purchase', function () {
+          beforeEach(async function () {
+            await this.dao.join({ from: member });
+          });
+
+          const bonus = new BN(2);
+          shouldBehaveLikeTokenDealer(member, wallet, rate, bonus);
+        });
+
+        context('if a member with staked tokens wants to purchase', function () {
+          beforeEach(async function () {
+            await this.token.mintMock(member, tokenAmount);
+
+            await this.dao.join({ from: member });
+            await this.token.transferAndCall(this.dao.address, tokenAmount, { from: member });
+          });
+
+          const bonus = new BN(4);
+          shouldBehaveLikeTokenDealer(member, wallet, rate, bonus);
+        });
+      });
+
+      context('like a TokenRecover', function () {
+        beforeEach(async function () {
+          this.instance = this.crowdsale;
+        });
+
+        shouldBehaveLikeTokenRecover([owner, thirdParty]);
+      });
     });
   });
 });

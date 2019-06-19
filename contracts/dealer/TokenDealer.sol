@@ -88,7 +88,6 @@ contract TokenDealer is ReentrancyGuard, TokenRecover {
         address beneficiary = msg.sender;
         uint256 weiAmount = msg.value;
 
-        require(_dao.isMember(beneficiary), "TokenDealer: beneficiary is not dao member");
         require(weiAmount != 0, "TokenDealer: weiAmount is 0");
 
         // calculate token amount to be sent
@@ -154,6 +153,16 @@ contract TokenDealer is ReentrancyGuard, TokenRecover {
      * @return Number of tokens that can be purchased with the specified _weiAmount
      */
     function _getTokenAmount(address beneficiary, uint256 weiAmount) internal view returns (uint256) {
-        return weiAmount.mul(_rate);
+        uint256 tokenAmount = weiAmount.mul(_rate);
+
+        if (_dao.isMember(beneficiary)) {
+            tokenAmount = tokenAmount.mul(2);
+        }
+
+        if (_dao.stakedTokensOf(beneficiary) > 0) {
+            tokenAmount = tokenAmount.mul(2);
+        }
+
+        return tokenAmount;
     }
 }
