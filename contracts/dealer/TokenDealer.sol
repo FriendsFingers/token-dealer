@@ -157,10 +157,14 @@ contract TokenDealer is ReentrancyGuard, TokenRecover {
 
         if (_dao.isMember(beneficiary)) {
             tokenAmount = tokenAmount.mul(2);
-        }
 
-        if (_dao.stakedTokensOf(beneficiary) > 0) {
-            tokenAmount = tokenAmount.mul(2);
+            if (_dao.stakedTokensOf(beneficiary) > 0) {
+                tokenAmount = tokenAmount.mul(2);
+            }
+
+            if (_dao.usedTokensOf(beneficiary) > 0) {
+                tokenAmount = tokenAmount.mul(2);
+            }
         }
 
         return tokenAmount;

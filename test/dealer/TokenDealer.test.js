@@ -9,7 +9,7 @@ const ERC1363Mock = artifacts.require('ERC1363Mock');
 const Contributions = artifacts.require('Contributions');
 const DAO = artifacts.require('DAO');
 
-contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
+contract('TokenDealer', function ([owner, wallet, member, operator, dappMock, thirdParty]) {
   const initialTokenSupply = new BN(1000000000);
 
   const rate = new BN(1000);
@@ -184,6 +184,38 @@ contract('TokenDealer', function ([owner, wallet, member, thirdParty]) {
           });
 
           const bonus = new BN(4);
+          shouldBehaveLikeTokenDealer(member, wallet, rate, bonus);
+        });
+
+        context('if a member with used tokens wants to purchase', function () {
+          beforeEach(async function () {
+            await this.dao.addOperator(operator, { from: owner });
+            await this.dao.addDapp(dappMock, { from: operator });
+
+            await this.token.mintMock(member, tokenAmount);
+
+            await this.dao.join({ from: member });
+            await this.token.transferAndCall(this.dao.address, tokenAmount, { from: member });
+            await this.dao.use(member, tokenAmount, { from: dappMock });
+          });
+
+          const bonus = new BN(4);
+          shouldBehaveLikeTokenDealer(member, wallet, rate, bonus);
+        });
+
+        context('if a member with staked and used tokens wants to purchase', function () {
+          beforeEach(async function () {
+            await this.dao.addOperator(operator, { from: owner });
+            await this.dao.addDapp(dappMock, { from: operator });
+
+            await this.token.mintMock(member, tokenAmount);
+
+            await this.dao.join({ from: member });
+            await this.token.transferAndCall(this.dao.address, tokenAmount, { from: member });
+            await this.dao.use(member, tokenAmount.divn(2), { from: dappMock });
+          });
+
+          const bonus = new BN(8);
           shouldBehaveLikeTokenDealer(member, wallet, rate, bonus);
         });
       });
