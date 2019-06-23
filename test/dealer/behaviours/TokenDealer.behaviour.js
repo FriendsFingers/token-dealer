@@ -5,6 +5,10 @@ function shouldBehaveLikeTokenDealer (investor, wallet, rate, bonus) {
     const value = new BN(100);
     const expectedTokenAmount = rate.mul(value).mul(bonus);
 
+    it('expected amount should return the right value', async function () {
+      (await this.crowdsale.expectedTokenAmount(investor, value)).should.be.bignumber.equal(expectedTokenAmount);
+    });
+
     describe('accepting payments', function () {
       describe('bare payments', function () {
         it('should accept payments', async function () {

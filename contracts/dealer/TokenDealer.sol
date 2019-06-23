@@ -147,6 +147,16 @@ contract TokenDealer is ReentrancyGuard, TokenRecover {
     }
 
     /**
+     * @dev Get expected token number for beneficiary.
+     * @param beneficiary Address receiving the tokens
+     * @param weiAmount Value in wei to be converted into tokens
+     * @return Number of tokens that can be purchased with the specified _weiAmount
+     */
+    function expectedTokenAmount(address beneficiary, uint256 weiAmount) public view returns (uint256) {
+        return _getTokenAmount(beneficiary, weiAmount);
+    }
+
+    /**
      * @dev The way in which ether is converted to tokens.
      * @param beneficiary Address receiving the tokens
      * @param weiAmount Value in wei to be converted into tokens

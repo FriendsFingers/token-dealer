@@ -30,8 +30,13 @@ App = {
     }
 
     $.getJSON('TokenDealer.json', function(data) {
-      App.contracts.SmartContractIstance = TruffleContract(data);
-      App.contracts.SmartContractIstance.setProvider(App.web3Provider);
+      App.contracts.TokenDealer = TruffleContract(data);
+      App.contracts.TokenDealer.setProvider(App.web3Provider);
+    });
+
+    $.getJSON('Contributions.json', function(data) {
+      App.contracts.Contributions = TruffleContract(data);
+      App.contracts.Contributions.setProvider(App.web3Provider);
     });
   },
 };
