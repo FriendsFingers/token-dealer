@@ -5,7 +5,7 @@
 
 |  File Name  |  SHA-1 Hash  |
 |-------------|--------------|
-| dist/Contributions.dist.sol | 01b4cd9fb798d620b270594a61271d7c85282ea6 |
+| dist/Contributions.dist.sol | ac29e67cf85d5eae82643be1bfec1693af676fa7 |
 
 
 ### Contracts Description Table

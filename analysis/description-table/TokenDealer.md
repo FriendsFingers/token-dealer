@@ -5,7 +5,7 @@
 
 |  File Name  |  SHA-1 Hash  |
 |-------------|--------------|
-| dist/TokenDealer.dist.sol | e675d75a31ddd37bc01efb840bd9ac850f703b38 |
+| dist/TokenDealer.dist.sol | 9dba4ae3fa4e7f59aa348c301a466be8f209cb6c |
 
 
 ### Contracts Description Table
